@@ -8,11 +8,11 @@ FocusKit is a lightweight set of terminal scripts that block distracting website
 
 ## What's Inside
 
-| Command | What it does |
-|---------|-------------|
+| Command      | What it does                                    |
+| ------------ | ----------------------------------------------- |
 | `startfocus` | Blocks distracting sites + starts a focus timer |
-| `endfocus` | Unblocks sites + ends the timer |
-| `cleanup` | Removes temp files + old downloads |
+| `endfocus`   | Unblocks sites + ends the timer                 |
+| `cleanup`    | Removes temp files + old downloads              |
 
 ---
 
@@ -60,6 +60,12 @@ sudo startfocus
 ```
 
 That's it. Sites are blocked, timer is running.
+
+**NOTE: Sometime running startfocus with sudo says startfocus command not found. If it happens run it without sudo and follow additional steps**
+
+```
+startfocus
+```
 
 ---
 
@@ -109,6 +115,7 @@ sudo startfocus 25
 ```
 
 **What happens:**
+
 - Your system's hosts file is modified to block the configured sites
 - A timer counts down in your terminal
 - When the timer ends, sites are automatically unblocked
@@ -126,6 +133,7 @@ sudo endfocus
 ```
 
 **What happens:**
+
 - Your hosts file is restored to its original state
 - DNS cache is flushed
 - Focus state is cleared
@@ -139,6 +147,7 @@ cleanup
 ```
 
 **What happens:**
+
 - System temp files older than 1 day are removed
 - Downloads older than 30 days are listed (you'll be asked to confirm)
 - A summary shows how much space was freed
@@ -151,13 +160,13 @@ Does **not** require sudo/Administrator.
 
 All settings live in one file: `focuskit.conf`
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `GUMROAD_LICENSE_KEY` | (empty) | Your Gumroad license key |
-| `FOCUS_DURATION` | 50 | Focus session length in minutes |
-| `BLOCKED_SITES` | YouTube, Reddit, X, etc. | Space-separated list of domains to block |
-| `CLEANUP_DAYS` | 30 | Delete downloads older than this many days |
-| `CLEANUP_CONFIRM` | yes | Ask before deleting downloads |
+| Setting               | Default                  | Description                                |
+| --------------------- | ------------------------ | ------------------------------------------ |
+| `GUMROAD_LICENSE_KEY` | (empty)                  | Your Gumroad license key                   |
+| `FOCUS_DURATION`      | 50                       | Focus session length in minutes            |
+| `BLOCKED_SITES`       | YouTube, Reddit, X, etc. | Space-separated list of domains to block   |
+| `CLEANUP_DAYS`        | 30                       | Delete downloads older than this many days |
+| `CLEANUP_CONFIRM`     | yes                      | Ask before deleting downloads              |
 
 **To add or remove blocked sites**, edit the `BLOCKED_SITES` line. Include both `example.com` and `www.example.com` for each site.
 
@@ -189,6 +198,7 @@ powershell -ExecutionPolicy Bypass -File Uninstall.ps1
 ```
 
 This completely removes:
+
 - All script files
 - Cached data
 - PATH entries
@@ -198,11 +208,11 @@ This completely removes:
 
 ## File Locations
 
-| What | Where |
-|------|-------|
-| Scripts | `~/.focuskit-scripts/` |
-| Config | `~/.focuskit-scripts/focuskit.conf` |
-| Cache & state | `~/.focuskit/` |
+| What          | Where                               |
+| ------------- | ----------------------------------- |
+| Scripts       | `~/.focuskit-scripts/`              |
+| Config        | `~/.focuskit-scripts/focuskit.conf` |
+| Cache & state | `~/.focuskit/`                      |
 
 ---
 

@@ -69,7 +69,7 @@ startfocus
 
 ---
 
-### Windows
+### Windows (WORK IN PROGRESS - INCOMPLETE)
 
 **1. Install (one command)**
 

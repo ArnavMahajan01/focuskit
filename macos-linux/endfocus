@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# --------------------------------------------
+# FocusKit — endfocus (macOS & Linux)
+# Restores hosts file and ends focus mode.
+# Run with: sudo endfocus
+# --------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/helpers.sh"
+
+# ------------ Preflight --------------------
+load_config
+require_sudo
+ensure_cache_dir
+
+# ------------ Check if focus mode is active ------------
+if [[ ! -f "${FOCUS_STATE}" ]]; then
+    warn "Focus mode is not active. Nothing to do."
+    exit 0
+fi
+
+# ------------ Restore hosts file ------------
+heading "Ending focus mode…"
+
+HOSTS_FILE="/etc/hosts"
+
+if [[ -f "${HOSTS_BACKUP}" ]]; then
+    cp "${HOSTS_BACKUP}" "${HOSTS_FILE}"
+    rm -f "${HOSTS_BACKUP}"
+    success "Hosts file restored."
+else
+    # Fallback: remove FocusKit lines manually
+    if [[ "$(detect_os)" == "macos" ]]; then
+        sed -i '' '/# ── FocusKit Block List/,/# ── End FocusKit Block List/d' "${HOSTS_FILE}"
+    else
+        sed -i '/# ── FocusKit Block List/,/# ── End FocusKit Block List/d' "${HOSTS_FILE}"
+    fi
+    success "Blocked sites removed from hosts file."
+fi
+
+# ------------ Flush DNS cache ------------
+OS=$(detect_os)
+if [[ "${OS}" == "macos" ]]; then
+    dscacheutil -flushcache 2>/dev/null || true
+    killall -HUP mDNSResponder 2>/dev/null || true
+elif [[ "${OS}" == "linux" ]]; then
+    if command -v systemd-resolve &>/dev/null; then
+        systemd-resolve --flush-caches 2>/dev/null || true
+    elif command -v resolvectl &>/dev/null; then
+        resolvectl flush-caches 2>/dev/null || true
+    fi
+fi
+
+# ------------ Calculate session duration ------------
+end_epoch=$(cat "${FOCUS_STATE}" 2>/dev/null || echo "0")
+now=$(date +%s)
+
+if (( end_epoch > 0 )); then
+    # Original duration = end_epoch - (end_epoch - configured duration)
+    # But simpler: just show how long ago focus started
+    configured_secs=$(( FOCUS_DURATION * 60 ))
+    start_epoch=$(( end_epoch - configured_secs ))
+    elapsed_mins=$(( (now - start_epoch) / 60 ))
+
+    if (( elapsed_mins >= configured_secs / 60 )); then
+        session_msg="Full session completed (${FOCUS_DURATION} min)"
+    else
+        session_msg="Session ended early (${elapsed_mins} of ${FOCUS_DURATION} min)"
+    fi
+else
+    session_msg="Session ended"
+fi
+
+# ------------ Clean up state --------------------
+rm -f "${FOCUS_STATE}"
+
+# ------------ Output --------------------
+echo ""
+echo -e "  ${BOLD}----------------------------------------${NC}"
+echo -e "  ${BOLD}│${NC}  ${GREEN}Focus mode OFF${NC}                  ${BOLD}│${NC}"
+echo -e "  ${BOLD}│${NC}  ${session_msg}  ${BOLD}│${NC}"
+echo -e "  ${BOLD}│${NC}  Welcome back!                   ${BOLD}│${NC}"
+echo -e "  ${BOLD}--------------------------------------------${NC}"
+echo ""

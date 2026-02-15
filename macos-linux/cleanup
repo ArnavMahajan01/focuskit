@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# ------------------------------------------------
+# FocusKit — cleanup (macOS & Linux)
+# Clears temp files and old downloads.
+# Run with: cleanup
+# ------------------------------------------------
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/helpers.sh"
+
+# ------------ Preflight --------------------
+load_config
+verify_license
+ensure_cache_dir
+
+OS=$(detect_os)
+
+heading "FocusKit Cleanup"
+echo ""
+
+total_freed=0
+items_removed=0
+
+# ------------ Helper: human-readable size ------------
+human_size() {
+    local bytes=$1
+    if (( bytes >= 1073741824 )); then
+        echo "$(( bytes / 1073741824 )) GB"
+    elif (( bytes >= 1048576 )); then
+        echo "$(( bytes / 1048576 )) MB"
+    elif (( bytes >= 1024 )); then
+        echo "$(( bytes / 1024 )) KB"
+    else
+        echo "${bytes} bytes"
+    fi
+}
+
+# ------------ 1. Clear system temp files ------------
+info "Scanning temp files…"
+
+temp_freed=0
+temp_count=0
+
+if [[ "${OS}" == "macos" ]]; then
+    # macOS temp locations
+    temp_dirs=("/tmp" "${TMPDIR:-/tmp}" "${HOME}/Library/Caches")
+elif [[ "${OS}" == "linux" ]]; then
+    # Linux temp locations
+    temp_dirs=("/tmp" "/var/tmp")
+fi
+
+for dir in "${temp_dirs[@]}"; do
+    if [[ -d "${dir}" && -w "${dir}" ]]; then
+        # Only delete files owned by current user, older than 1 day
+        while IFS= read -r -d '' file; do
+            size=$(stat -f%z "${file}" 2>/dev/null || stat -c%s "${file}" 2>/dev/null || echo 0)
+            rm -f "${file}" 2>/dev/null && {
+                temp_freed=$(( temp_freed + size ))
+                temp_count=$(( temp_count + 1 ))
+            }
+        done < <(find "${dir}" -maxdepth 2 -type f -user "$(id -u)" -mtime +1 -print0 2>/dev/null)
+    fi
+done
+
+if (( temp_count > 0 )); then
+    success "Temp files: removed ${temp_count} files ($(human_size ${temp_freed}))"
+else
+    info "Temp files: nothing to clean"
+fi
+
+total_freed=$(( total_freed + temp_freed ))
+items_removed=$(( items_removed + temp_count ))
+
+# ------------ 2. Clear old Downloads ------------
+DOWNLOADS_DIR="${HOME}/Downloads"
+
+if [[ -d "${DOWNLOADS_DIR}" ]]; then
+    info "Scanning Downloads older than ${CLEANUP_DAYS} days…"
+
+    # Collect files to delete
+    old_files=()
+    old_size=0
+
+    while IFS= read -r -d '' file; do
+        size=$(stat -f%z "${file}" 2>/dev/null || stat -c%s "${file}" 2>/dev/null || echo 0)
+        old_files+=("${file}")
+        old_size=$(( old_size + size ))
+    done < <(find "${DOWNLOADS_DIR}" -maxdepth 1 -type f -mtime "+${CLEANUP_DAYS}" -print0 2>/dev/null)
+
+    if (( ${#old_files[@]} > 0 )); then
+        echo ""
+        info "Found ${#old_files[@]} files ($(human_size ${old_size})) to remove:"
+        echo ""
+
+        # Show first 10 files
+        shown=0
+        for file in "${old_files[@]}"; do
+            if (( shown < 10 )); then
+                echo "    $(basename "${file}")"
+                shown=$(( shown + 1 ))
+            fi
+        done
+        if (( ${#old_files[@]} > 10 )); then
+            echo "    … and $(( ${#old_files[@]} - 10 )) more"
+        fi
+        echo ""
+
+        # Confirm if configured
+        if [[ "${CLEANUP_CONFIRM}" == "yes" ]]; then
+            read -r -p "  Delete these files? [y/N] " confirm
+            if [[ "${confirm}" != [yY] ]]; then
+                info "Skipped Downloads cleanup."
+                old_files=()
+            fi
+        fi
+
+        # Delete confirmed files
+        dl_count=0
+        for file in "${old_files[@]}"; do
+            rm -f "${file}" 2>/dev/null && dl_count=$(( dl_count + 1 ))
+        done
+
+        if (( dl_count > 0 )); then
+            success "Downloads: removed ${dl_count} files ($(human_size ${old_size}))"
+            total_freed=$(( total_freed + old_size ))
+            items_removed=$(( items_removed + dl_count ))
+        fi
+    else
+        info "Downloads: nothing older than ${CLEANUP_DAYS} days"
+    fi
+else
+    warn "Downloads folder not found at ${DOWNLOADS_DIR}"
+fi
+
+# ------------ 3. Clear browser caches (safe subset) ------------
+info "Scanning browser caches…"
+
+cache_freed=0
+cache_count=0
+
+if [[ "${OS}" == "macos" ]]; then
+    browser_caches=(
+        "${HOME}/Library/Caches/com.apple.Safari/WebKitCache"
+        "${HOME}/Library/Caches/Google/Chrome/Default/Cache"
+        "${HOME}/Library/Caches/Firefox/Profiles"
+    )
+elif [[ "${OS}" == "linux" ]]; then
+    browser_caches=(
+        "${HOME}/.cache/google-chrome/Default/Cache"
+        "${HOME}/.cache/mozilla/firefox"
+        "${HOME}/.cache/chromium/Default/Cache"
+    )
+fi
+
+for dir in "${browser_caches[@]}"; do
+    if [[ -d "${dir}" ]]; then
+        size=$(du -s "${dir}" 2>/dev/null | awk '{print $1}')
+        size_bytes=$(( size * 1024 ))  # du reports in KB on some systems
+        rm -rf "${dir}" 2>/dev/null && {
+            cache_freed=$(( cache_freed + size_bytes ))
+            cache_count=$(( cache_count + 1 ))
+        }
+    fi
+done
+
+if (( cache_count > 0 )); then
+    success "Browser caches: cleared ${cache_count} cache dirs ($(human_size ${cache_freed}))"
+else
+    info "Browser caches: nothing to clean"
+fi
+
+total_freed=$(( total_freed + cache_freed ))
+
+# ------------ Summary --------------------
+echo ""
+echo -e "  ${BOLD}------------------------------------${NC}"
+echo -e "  ${BOLD}│${NC}  ${GREEN}Cleanup complete${NC}                ${BOLD}│${NC}"
+echo -e "  ${BOLD}│${NC}  Files removed: ${CYAN}${items_removed}${NC}               ${BOLD}│${NC}"
+echo -e "  ${BOLD}│${NC}  Space freed:   ${CYAN}$(human_size ${total_freed})${NC}          ${BOLD}│${NC}"
+echo -e "  ${BOLD}------------------------------------${NC}"
+echo ""

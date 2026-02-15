@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# --------------------------------------------
+# FocusKit — startfocus (macOS & Linux)
+# Blocks distracting websites and starts a
+# focus timer. Run with: sudo startfocus
+# --------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/helpers.sh"
+
+# -------------------------------------------- Preflight --------------------------------------------
+load_config
+verify_license
+require_sudo
+ensure_cache_dir
+
+# -------------------------------------------- Check if already in focus mode --------------------------------------------
+if [[ -f "${FOCUS_STATE}" ]]; then
+    warn "Focus mode is already active."
+    echo "  Run 'sudo endfocus' to stop it first."
+    exit 1
+fi
+
+# -------------------------------------------- Parse optional duration argument --------------------------------------------
+duration="${1:-${FOCUS_DURATION}}"
+if ! [[ "${duration}" =~ ^[0-9]+$ ]] || (( duration < 1 || duration > 480 )); then
+    error "Duration must be a number between 1 and 480 minutes."
+    exit 1
+fi
+
+# -------------------------------------------- Backup hosts file --------------------------------------------
+HOSTS_FILE="/etc/hosts"
+
+if [[ ! -f "${HOSTS_BACKUP}" ]]; then
+    cp "${HOSTS_FILE}" "${HOSTS_BACKUP}"
+fi
+
+# -------------------------------------------- Block websites --------------------------------------------
+heading "Starting focus mode…"
+
+{
+    echo ""
+    echo "# ── FocusKit Block List (do not edit manually) ──"
+    for site in ${BLOCKED_SITES}; do
+        echo "127.0.0.1  ${site}"
+    done
+    echo "# ── End FocusKit Block List ──"
+} >> "${HOSTS_FILE}"
+
+# Flush DNS cache
+OS=$(detect_os)
+if [[ "${OS}" == "macos" ]]; then
+    dscacheutil -flushcache 2>/dev/null || true
+    killall -HUP mDNSResponder 2>/dev/null || true
+elif [[ "${OS}" == "linux" ]]; then
+    if command -v systemd-resolve &>/dev/null; then
+        systemd-resolve --flush-caches 2>/dev/null || true
+    elif command -v resolvectl &>/dev/null; then
+        resolvectl flush-caches 2>/dev/null || true
+    fi
+fi
+
+# -------------------------------------------- Calculate end time --------------------------------------------
+start_time=$(date +%s)
+end_time=$(( start_time + duration * 60 ))
+
+# Store state
+echo "${end_time}" > "${FOCUS_STATE}"
+
+# Format end time for display
+if [[ "${OS}" == "macos" ]]; then
+    end_display=$(date -r "${end_time}" "+%H:%M")
+else
+    end_display=$(date -d "@${end_time}" "+%H:%M")
+fi
+
+# -------------------------------------------- Blocked site count --------------------------------------------
+site_count=$(echo "${BLOCKED_SITES}" | wc -w | tr -d ' ')
+
+# -------------------------------------------- Output --------------------------------------------
+echo ""
+echo -e "  ${BOLD}----------------------------------------${NC}"
+echo -e "  ${BOLD}│${NC}  ${GREEN}Focus mode ON${NC}                   ${BOLD}│${NC}"
+echo -e "  ${BOLD}│${NC}  Duration: ${CYAN}${duration} minutes${NC}            ${BOLD}│${NC}"
+echo -e "  ${BOLD}│${NC}  Ends at:  ${CYAN}${end_display}${NC}                ${BOLD}│${NC}"
+echo -e "  ${BOLD}│${NC}  Blocked:  ${YELLOW}${site_count} sites${NC}              ${BOLD}│${NC}"
+echo -e "  ${BOLD}----------------------------------------${NC}"
+echo ""
+info "Run ${BOLD}sudo endfocus${NC} when you're done."
+echo ""
+
+# -------------------------------------------- Optional: wait and auto-restore --------------------------------------------
+# Run the timer in the foreground (user can Ctrl+C)
+info "Timer running… press Ctrl+C to keep focus mode active in background."
+echo ""
+
+remaining=${duration}
+while (( remaining > 0 )); do
+    mins=$(( remaining ))
+    printf "\r  ⏱  ${CYAN}%d min remaining${NC}   " "${mins}"
+    sleep 60 2>/dev/null || break  # break on Ctrl+C
+    remaining=$(( remaining - 1 ))
+done
+
+# If timer completed naturally, auto-restore
+if (( remaining <= 0 )); then
+    echo ""
+    echo ""
+    heading "Time's up!"
+    # Auto-run endfocus
+    "${SCRIPT_DIR}/endfocus"
+fi

@@ -1,1 +1,26 @@
+# Dependencies
 /app/node_modules
+
+# Rust build output
+/app/src-tauri/target
+
+# Vite build output
+/app/dist
+
+# Tauri generated files
+/app/src-tauri/gen
+
+# Local env / secrets
+.env
+.env.local
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+.claude/

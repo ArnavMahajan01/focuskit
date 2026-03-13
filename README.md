@@ -1,252 +1,137 @@
 # FocusKit
 
-**Three commands to take back your day.**
+**One command to kill distractions. A full app to stay in control.**
 
-FocusKit is a lightweight set of terminal scripts that block distracting websites, run a focus timer, and clean up junk files — all from one command. No apps to install, no accounts to create, no background services.
+FocusKit blocks distracting websites, runs a focus timer, and cleans up junk files, all from a clean desktop app. No accounts to create, no subscriptions, no background services phoning home.
 
-## NOTE: Go under releases if you directly want to install and run the application without running the code
+> **Prefer the terminal?** See [README-CLI.md](README-CLI.md) for the original script-based version.
 
-https://github.com/ArnavMahajan01/focuskit/releases
+**[⚡ Get Pro License on Gumroad →](https://arnav01m.gumroad.com/l/focuskit-onecoomand-zer0distractions)**
 
-#### LINK for Gumroad Key: https://arnav01m.gumroad.com/l/focuskit-onecoomand-zer0distractions
+---
+
+## Download
+
+Get the latest installer for your platform from the [Releases page](https://github.com/ArnavMahajan01/focuskit/releases):
+
+| Platform | File |
+|----------|------|
+| macOS (Apple Silicon M1/M2/M3) | `FocusKit_*_aarch64.dmg` |
+| macOS (Intel) | `FocusKit_*_x64.dmg` |
+| Windows | `FocusKit_*_x64-setup.exe` |
+| Linux (Debian/Ubuntu) | `focuskit_*_amd64.deb` |
+| Linux (universal) | `focuskit_*_amd64.AppImage` |
+
+---
+
+## Install
+
+**macOS**
+1. Open the `.dmg` and drag FocusKit to Applications
+2. First launch: right-click the app and click **Open** (needed once since the app is unsigned)
+
+**Windows**
+1. Run the `.exe` installer
+2. If SmartScreen warns you, click **More info** then **Run anyway**
+
+**Linux (Debian/Ubuntu)**
+```bash
+sudo dpkg -i focuskit_*_amd64.deb
+```
+
+**Linux (universal)**
+```bash
+chmod +x focuskit_*_amd64.AppImage
+./focuskit_*_amd64.AppImage
+```
+
+---
 
 ## What's Inside
 
-| Command      | What it does                                    |
-| ------------ | ----------------------------------------------- |
-| `startfocus` | Blocks distracting sites + starts a focus timer |
-| `endfocus`   | Unblocks sites + ends the timer                 |
-| `cleanup`    | Removes temp files + old downloads              |
+| Feature | Free | Pro |
+|---------|------|-----|
+| Block distracting sites | ✓ | ✓ |
+| Focus timer (25 min, 50 min) | ✓ | ✓ |
+| Custom focus duration (1-480 min) | x | ✓ |
+| Extra preset durations (15 min, 90 min) | x | ✓ |
+| Full session history | x | ✓ |
+| Cleanup tool | ✓ | ✓ |
 
 ---
 
-## Quick Start
+## Get Pro
 
-### macOS & Linux
+**[Buy a Pro license on Gumroad →](https://arnav01m.gumroad.com/l/focuskit-onecoomand-zer0distractions)**
 
-**1. Install (one command)**
+After purchase you'll receive a license key. Open FocusKit, go to **Settings > License**, paste the key and click **Verify**. Pro unlocks instantly.
 
-Open Terminal and run:
-
-```
-cd focuskit
-bash install.sh
-```
-
-**2. Add your license key**
-
-Open the config file:
-
-```
-nano ~/.focuskit-scripts/focuskit.conf
-```
-
-Paste your Gumroad license key between the quotes:
-
-```
-GUMROAD_LICENSE_KEY="your-key-here"
-```
-
-Save and close (`Ctrl+X`, then `Y`, then `Enter`).
-
-**3. Reload your terminal**
-
-```
-source ~/.zshrc
-```
-
-(or `source ~/.bashrc` if you use Bash)
-
-**4. Start focusing**
-
-```
-sudo startfocus
-```
-
-That's it. Sites are blocked, timer is running.
-
-**NOTE: Sometime running startfocus with sudo says startfocus command not found. If it happens run it without sudo and follow additional steps**
-
-```
-startfocus
-```
+- No subscription, one-time purchase
+- No account required, just a key
+- Works offline after first verification (7-day cache)
 
 ---
 
-### Windows (WORK IN PROGRESS - INCOMPLETE)
+## How It Works
 
-**1. Install (one command)**
+1. **Add sites to block** - go to the Block List page and add the domains you want blocked during focus sessions (e.g. `youtube.com`, `reddit.com`)
+2. **Start a focus session** - pick a duration and hit Start. FocusKit modifies your system's hosts file to block the sites and starts the timer
+3. **End the session** - click End Focus or let the timer run out. Sites are unblocked, DNS is flushed, session is logged
+4. **Clean up** - use the Cleanup page to remove temp files and old downloads
 
-Open PowerShell and run:
-
-```
-cd focuskit
-powershell -ExecutionPolicy Bypass -File Install.ps1
-```
-
-**2. Add your license key**
-
-```
-notepad %USERPROFILE%\.focuskit-scripts\focuskit.conf
-```
-
-Paste your Gumroad license key between the quotes and save.
-
-**3. Restart your terminal**
-
-Close and reopen PowerShell or Command Prompt.
-
-**4. Start focusing (run as Administrator)**
-
-```
-startfocus
-```
-
----
-
-## Using Each Command
-
-### startfocus
-
-Blocks distracting websites and starts a countdown timer.
-
-```bash
-# Default: 50 minutes
-sudo startfocus
-
-# Custom duration: 25 minutes
-sudo startfocus 25
-```
-
-**What happens:**
-
-- Your system's hosts file is modified to block the configured sites
-- A timer counts down in your terminal
-- When the timer ends, sites are automatically unblocked
-
-**Note:** Requires `sudo` (macOS/Linux) or Administrator (Windows) because it modifies the system hosts file.
-
-Press `Ctrl+C` during the timer to keep focus mode active in the background — sites stay blocked until you manually run `endfocus`.
-
-### endfocus
-
-Restores your network access and ends the session.
-
-```bash
-sudo endfocus
-```
-
-**What happens:**
-
-- Your hosts file is restored to its original state
-- DNS cache is flushed
-- Focus state is cleared
-
-### cleanup
-
-Removes temp files and old downloads.
-
-```bash
-cleanup
-```
-
-**What happens:**
-
-- System temp files older than 1 day are removed
-- Downloads older than 30 days are listed (you'll be asked to confirm)
-- A summary shows how much space was freed
-
-Does **not** require sudo/Administrator.
-
----
-
-## Configuration
-
-All settings live in one file: `focuskit.conf`
-
-| Setting               | Default                  | Description                                |
-| --------------------- | ------------------------ | ------------------------------------------ |
-| `GUMROAD_LICENSE_KEY` | (empty)                  | Your Gumroad license key                   |
-| `FOCUS_DURATION`      | 50                       | Focus session length in minutes            |
-| `BLOCKED_SITES`       | YouTube, Reddit, X, etc. | Space-separated list of domains to block   |
-| `CLEANUP_DAYS`        | 30                       | Delete downloads older than this many days |
-| `CLEANUP_CONFIRM`     | yes                      | Ask before deleting downloads              |
-
-**To add or remove blocked sites**, edit the `BLOCKED_SITES` line. Include both `example.com` and `www.example.com` for each site.
+**Note:** Blocking sites requires modifying the system hosts file. FocusKit will prompt for your password (macOS/Linux) or admin rights (Windows) when starting or ending a session.
 
 ---
 
 ## License Key
 
-Your license key is verified once with Gumroad's API, then cached locally for 7 days. This means:
+Your key is verified once with Gumroad's API, then cached locally for 7 days:
 
-- **No internet required** for daily use (after first verification)
-- **No tracking or telemetry** — the only network call is to Gumroad's license API
-- **No accounts** — just a key in a config file
-- If you're offline and the cache has expired, the scripts still work using the last verification
+- **No internet required** for daily use after first verification
+- **No tracking or telemetry** - the only network call is to Gumroad's license API
+- **No accounts** - just a key stored in your config file
+- If offline and the cache has expired, the last successful verification is used
+
+---
+
+## Configuration
+
+All settings are accessible from the **Settings** page inside the app. They're stored in `~/.focuskit-scripts/focuskit.conf`, the same file used by the CLI version, so both can coexist.
 
 ---
 
 ## Uninstalling
 
-### macOS & Linux
-
+**macOS / Linux**
 ```bash
 bash uninstall.sh
 ```
 
-### Windows
-
-```
+**Windows**
+```powershell
 powershell -ExecutionPolicy Bypass -File Uninstall.ps1
 ```
 
-This completely removes:
-
-- All script files
-- Cached data
-- PATH entries
-- If focus mode is active, hosts file is restored first
-
----
-
-## File Locations
-
-| What          | Where                               |
-| ------------- | ----------------------------------- |
-| Scripts       | `~/.focuskit-scripts/`              |
-| Config        | `~/.focuskit-scripts/focuskit.conf` |
-| Cache & state | `~/.focuskit/`                      |
+This removes all scripts, cached data, and PATH entries. If focus mode is active, the hosts file is restored first.
 
 ---
 
 ## Troubleshooting
 
-**"Permission denied"**
-→ Use `sudo` (macOS/Linux) or run as Administrator (Windows) for `startfocus` and `endfocus`.
+**"Permission denied" when starting/ending focus**
+FocusKit needs elevated privileges to modify the hosts file. Approve the prompt when asked.
 
-**"No license key found"**
-→ Open `focuskit.conf` and paste your key from your Gumroad purchase receipt.
+**Sites still accessible after starting focus**
+Close and reopen your browser. Some browsers cache DNS entries.
 
-**"Could not reach Gumroad"**
-→ Check your internet. If you've verified before, the cached license will still work offline.
+**Focus mode stuck**
+Run the uninstaller - it safely restores your hosts file regardless of state.
 
-**Sites still accessible after startfocus**
-→ Try closing and reopening your browser. Some browsers cache DNS.
-
-**Focus mode stuck (can't run endfocus)**
-→ The uninstall script will safely restore your hosts file.
-
----
-
-## Design Principles
-
-- **Minimal > clever** — Plain scripts, plain config, no magic
-- **Explicit > automatic** — You run the commands, you see what happens
-- **Reversible > permanent** — Everything can be undone, hosts file is always backed up
+**License key not working**
+Make sure you're copying the full key from your Gumroad receipt. If the issue persists, contact support.
 
 ---
 
 ## Support
 
-Questions? Reply to your Gumroad purchase receipt email.
+Questions or issues? Contact via [Gumroad](https://arnav01m.gumroad.com) or open a [GitHub issue](https://github.com/ArnavMahajan01/focuskit/issues).

@@ -4,8 +4,11 @@
 
 FocusKit is a lightweight set of terminal scripts that block distracting websites, run a focus timer, and clean up junk files — all from one command. No apps to install, no accounts to create, no background services.
 
-LINK: https://arnav01m.gumroad.com/l/focuskit-onecoomand-zer0distractions
----
+## NOTE: Go under releases if you directly want to install and run the application without running the code
+
+https://github.com/ArnavMahajan01/focuskit/releases
+
+#### LINK for Gumroad Key: https://arnav01m.gumroad.com/l/focuskit-onecoomand-zer0distractions
 
 ## What's Inside
 
